@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { FaSave, FaUndo, FaSpinner } from 'react-icons/fa';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorDisplay from './ErrorDisplay';
 import { API_URL } from '../config';
 
 function AssessmentForm() {
@@ -10,6 +13,9 @@ function AssessmentForm() {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     continuous_assessment_score: '',
     examination_score: '',
@@ -17,29 +23,24 @@ function AssessmentForm() {
     academic_year: new Date().getFullYear().toString()
   });
 
-  useEffect(() => {
-    fetchClassStreams();
-    fetchSubjects();
-  }, []);
-
-  useEffect(() => {
-    if (selectedClass) {
-      fetchStudentsByClass();
-    }
-  }, [selectedClass]);
 
   const fetchClassStreams = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/class-streams`);
+      const response = await axios.get(`${API_URL}/class-streams`, { timeout: 10000 });
       setClassStreams(response.data);
     } catch (error) {
+      console.error('Error fetching class streams:', error);
+      setError('Failed to load class streams');
       toast.error('Error fetching class streams');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchSubjects = async () => {
     try {
-      const response = await axios.get(`${API_URL}/subjects`);
+      const response = await axios.get(`${API_URL}/subjects`, { timeout: 10000 });
       setSubjects(response.data);
     } catch (error) {
       toast.error('Error fetching subjects');
@@ -47,11 +48,14 @@ function AssessmentForm() {
   };
 
   const fetchStudentsByClass = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/students/class/${selectedClass}`);
+      const response = await axios.get(`${API_URL}/students/class/${selectedClass}`, { timeout: 10000 });
       setStudents(response.data);
     } catch (error) {
       toast.error('Error fetching students');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,16 +70,27 @@ function AssessmentForm() {
     const continuousScore = parseFloat(formData.continuous_assessment_score);
     const examScore = parseFloat(formData.examination_score);
 
-    if (continuousScore < 0 || continuousScore > 30) {
+    if (isNaN(continuousScore) || continuousScore < 0 || continuousScore > 30) {
       toast.error('Continuous assessment score must be between 0 and 30');
       return;
     }
 
-    if (examScore < 0 || examScore > 70) {
+    if (isNaN(examScore) || examScore < 0 || examScore > 70) {
       toast.error('Examination score must be between 0 and 70');
       return;
     }
 
+    if (!formData.academic_term) {
+      toast.error('Please select academic term');
+      return;
+    }
+
+    if (!formData.academic_year) {
+      toast.error('Please enter academic year');
+      return;
+    }
+
+    setSaving(true);
     try {
       await axios.post(`${API_URL}/assessments`, {
         student_id: selectedStudent,
@@ -85,11 +100,14 @@ function AssessmentForm() {
         examination_score: examScore,
         academic_term: formData.academic_term,
         academic_year: formData.academic_year
-      });
+      }, { timeout: 15000 });
       toast.success('Assessment recorded successfully');
       resetForm();
     } catch (error) {
+      console.error('Error recording assessment:', error);
       toast.error(error.response?.data?.error || 'Error recording assessment');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -104,19 +122,47 @@ function AssessmentForm() {
     });
   };
 
+  useEffect(() => {
+    fetchClassStreams();
+    fetchSubjects();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClass) {
+      fetchStudentsByClass();
+    } else {
+      setStudents([]);
+      setSelectedStudent('');
+    }
+  }, [selectedClass]);
+
+  if (loading && !classStreams.length) {
+    return <LoadingSpinner message="Loading form data..." />;
+  }
+
+  if (error && !classStreams.length) {
+    return <ErrorDisplay error={error} onRetry={fetchClassStreams} />;
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-3xl font-bold mb-6">Record Student Assessment</h2>
+      <div className="mb-6">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Record Student Assessment
+        </h2>
+        <p className="text-gray-600 mt-1">Record continuous assessment and examination scores</p>
+      </div>
       
-      <form onSubmit={handleSubmit} className="card">
-        <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-6">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium mb-2">Class Stream *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Class Stream *</label>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               required
               className="input-field"
+              disabled={loading}
             >
               <option value="">Select Class</option>
               {classStreams.map((stream) => (
@@ -128,12 +174,12 @@ function AssessmentForm() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Student *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Student *</label>
             <select
               value={selectedStudent}
               onChange={(e) => setSelectedStudent(e.target.value)}
               required
-              disabled={!selectedClass}
+              disabled={!selectedClass || loading}
               className="input-field"
             >
               <option value="">Select Student</option>
@@ -146,7 +192,7 @@ function AssessmentForm() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Subject *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
@@ -162,66 +208,92 @@ function AssessmentForm() {
             </select>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium mb-2">Continuous Assessment Score (0-30) *</label>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.continuous_assessment_score}
-              onChange={(e) => setFormData({ ...formData, continuous_assessment_score: e.target.value })}
-              required
-              className="input-field"
-              placeholder="e.g., 25.5"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Continuous Assessment Score (0-30) *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.continuous_assessment_score}
+                onChange={(e) => setFormData({ ...formData, continuous_assessment_score: e.target.value })}
+                required
+                className="input-field"
+                placeholder="e.g., 25.5"
+              />
+              <p className="text-xs text-gray-500 mt-1">Maximum: 30 points</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Examination Score (0-70) *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.examination_score}
+                onChange={(e) => setFormData({ ...formData, examination_score: e.target.value })}
+                required
+                className="input-field"
+                placeholder="e.g., 65.5"
+              />
+              <p className="text-xs text-gray-500 mt-1">Maximum: 70 points</p>
+            </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium mb-2">Examination Score (0-70) *</label>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.examination_score}
-              onChange={(e) => setFormData({ ...formData, examination_score: e.target.value })}
-              required
-              className="input-field"
-              placeholder="e.g., 65.5"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2">Academic Term *</label>
-            <select
-              value={formData.academic_term}
-              onChange={(e) => setFormData({ ...formData, academic_term: e.target.value })}
-              required
-              className="input-field"
-            >
-              <option value="">Select Term</option>
-              <option value="Term 1">Term 1</option>
-              <option value="Term 2">Term 2</option>
-              <option value="Term 3">Term 3</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2">Academic Year *</label>
-            <input
-              type="text"
-              value={formData.academic_year}
-              onChange={(e) => setFormData({ ...formData, academic_year: e.target.value })}
-              required
-              className="input-field"
-              placeholder="e.g., 2024"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Academic Term *</label>
+              <select
+                value={formData.academic_term}
+                onChange={(e) => setFormData({ ...formData, academic_term: e.target.value })}
+                required
+                className="input-field"
+              >
+                <option value="">Select Term</option>
+                <option value="Term 1">Term 1</option>
+                <option value="Term 2">Term 2</option>
+                <option value="Term 3">Term 3</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Academic Year *</label>
+              <input
+                type="text"
+                value={formData.academic_year}
+                onChange={(e) => setFormData({ ...formData, academic_year: e.target.value })}
+                required
+                className="input-field"
+                placeholder="e.g., 2024"
+              />
+            </div>
           </div>
         </div>
         
-        <div className="flex justify-end space-x-3 mt-6">
-          <button type="button" onClick={resetForm} className="btn-secondary">
-            Reset
+        <div className="flex justify-end space-x-3 mt-8 pt-4 border-t">
+          <button 
+            type="button" 
+            onClick={resetForm} 
+            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200"
+          >
+            <FaUndo className="mr-2" /> Reset
           </button>
-          <button type="submit" className="btn-primary">
-            Record Assessment
+          <button 
+            type="submit" 
+            disabled={saving}
+            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <FaSpinner className="animate-spin mr-2" /> Saving...
+              </>
+            ) : (
+              <>
+                <FaSave className="mr-2" /> Record Assessment
+              </>
+            )}
           </button>
         </div>
       </form>

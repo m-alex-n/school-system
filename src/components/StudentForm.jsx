@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -21,13 +21,7 @@ function StudentForm() {
     class_stream_id: ''
   });
 
-  useEffect(() => {
-    fetchClassStreams();
-    if (id) {
-      fetchStudent();
-    }
-  }, [id]);
-
+  
   const fetchClassStreams = async () => {
     try {
       const response = await axios.get(`${API_URL}/class-streams`);
@@ -56,7 +50,15 @@ function StudentForm() {
       toast.error('Error fetching student details');
     }
   };
+  
+  useEffect(() => {
+    fetchClassStreams();
+    if (id) {
+      fetchStudent();
+    }
+  }, [id]);
 
+  
   const handleChange = (e) => {
     setFormData({
       ...formData,
