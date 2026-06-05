@@ -45,7 +45,7 @@ function ClassPerformance() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${API_URL}/performance/class/${classId}/overall`);
+      const response = await axios.get(`${API_URL}/assessments/performance/class/${classId}`);
       console.log('Overall Performance Data:', response.data);
       setOverallPerformance(response.data);
     } catch (error) {
@@ -70,7 +70,7 @@ function ClassPerformance() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${API_URL}/performance/class/${classId}/subject/${selectedSubject}`);
+      const response = await axios.get(`${API_URL}/assessments/performance/class/${classId}/subject/${selectedSubject}`);
       setSubjectPerformance(response.data);
     } catch (error) {
       console.error('Error fetching subject performance:', error);
