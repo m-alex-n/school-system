@@ -61,7 +61,11 @@ function StudentList() {
       try {
         await axios.delete(`${API_URL}/students/${id}`);
         toast.success('Student deleted successfully');
-        fetchAllStudents();
+        if (selectedClass) {
+          fetchStudentsByClass();
+        } else {
+          fetchAllStudents();
+        }
       } catch (error) {
         toast.error('Error deleting student');
       }
@@ -70,6 +74,7 @@ function StudentList() {
 
   const downloadReportCard = async (studentId) => {
     try {
+      toast.loading('Generating report card...', { id: 'report' });
       const response = await axios.get(`${API_URL}/reports/student/${studentId}/pdf`, {
         responseType: 'blob'
       });
@@ -80,9 +85,9 @@ function StudentList() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Report card downloaded');
+      toast.success('Report card downloaded', { id: 'report' });
     } catch (error) {
-      toast.error('Error generating report card');
+      toast.error('Error generating report card', { id: 'report' });
     }
   };
 
@@ -140,23 +145,22 @@ function StudentList() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {students.map((student) => (
-                <tr key={student.id}>
+                <tr key={student.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">{student.admission_number}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {student.first_name} {student.last_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{student.class_stream_name || 'Not Assigned'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.gender}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{student.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.gender || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{student.email || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                  <Link
-  to={`/students/${student.id}`}
-  className="text-blue-600 hover:text-blue-900 mr-3"
-  title="View Details"
->
-  <FaEye />
-</Link>
-
+                    <Link
+                      to={`/students/${student.id}`}
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                      title="View Details"
+                    >
+                      <FaEye />
+                    </Link>
                     <button
                       onClick={() => downloadReportCard(student.id)}
                       className="text-green-600 hover:text-green-900 mr-3"
@@ -167,12 +171,14 @@ function StudentList() {
                     <Link
                       to={`/students/edit/${student.id}`}
                       className="text-blue-600 hover:text-blue-900 mr-3"
+                      title="Edit Student"
                     >
                       <FaEdit />
                     </Link>
                     <button
                       onClick={() => handleDelete(student.id)}
                       className="text-red-600 hover:text-red-900"
+                      title="Delete Student"
                     >
                       <FaTrash />
                     </button>
