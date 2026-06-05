@@ -154,34 +154,36 @@ function StudentList() {
                   <td className="px-6 py-4 whitespace-nowrap">{student.gender || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{student.email || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Link
-                      to={`/students/${student.id}`}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      title="View Details"
-                    >
-                      <FaEye />
-                    </Link>
-                    <button
-                      onClick={() => downloadReportCard(student.id)}
-                      className="text-green-600 hover:text-green-900 mr-3"
-                      title="Download Report Card"
-                    >
-                      <FaDownload />
-                    </button>
-                    <Link
-                      to={`/students/edit/${student.id}`}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      title="Edit Student"
-                    >
-                      <FaEdit />
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(student.id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Delete Student"
-                    >
-                      <FaTrash />
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <Link
+                        to={`/students/${student.id}`}
+                        className="text-blue-600 hover:text-blue-900 transition-colors duration-200"
+                        title="View Details"
+                      >
+                        <FaEye className="w-5 h-5" />
+                      </Link>
+                      <button
+                        onClick={() => downloadReportCard(student.id)}
+                        className="text-green-600 hover:text-green-900 transition-colors duration-200"
+                        title="Download Report Card"
+                      >
+                        <FaDownload className="w-5 h-5" />
+                      </button>
+                      <Link
+                        to={`/students/edit/${student.id}`}
+                        className="text-indigo-600 hover:text-indigo-900 transition-colors duration-200"
+                        title="Edit Student"
+                      >
+                        <FaEdit className="w-5 h-5" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(student.id)}
+                        className="text-red-600 hover:text-red-900 transition-colors duration-200"
+                        title="Delete Student"
+                      >
+                        <FaTrash className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
