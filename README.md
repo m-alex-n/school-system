@@ -2,6 +2,18 @@
 
 Web interface for the Ikonex Academy Student Management System. Built with **React 19**, **Vite**, **Tailwind CSS**, and **React Router**.
 
+## Features
+
+| Area | Description |
+|------|-------------|
+| Dashboard | Summary stats, API health check, quick navigation |
+| Student management | List, filter by class, register, edit, view performance & PDF report |
+| Class streams | CRUD and subject assignment |
+| Subjects | CRUD |
+| Assessments | Record CA (0–30) and exam (0–70) scores per term |
+| Class performance | Overall and per-subject rankings, PDF/CSV export |
+| UI utilities | Loading spinners, error display, empty states, skeleton loaders |
+| Responsive layout | Mobile hamburger navigation |
 
 ## Tech Stack
 
@@ -12,6 +24,7 @@ Web interface for the Ikonex Academy Student Management System. Built with **Rea
 - **HTTP client:** Axios
 - **Notifications:** React Hot Toast
 - **Icons:** React Icons
+- **Testing:** Vitest, React Testing Library, jsdom
 
 ## Project Structure
 
@@ -30,7 +43,11 @@ frontend/src/
 │   ├── ClassPerformance.jsx# Rankings & report exports
 │   ├── LoadingSpinner.jsx
 │   ├── ErrorDisplay.jsx
-│   └── EmptyState.jsx
+│   ├── EmptyState.jsx
+│   ├── SkeletonLoader.jsx  # Placeholder loading UI (table/card/text)
+│   └── StudentForm.test.jsx
+├── test/
+│   └── setup.js            # Vitest + jest-dom matchers, cleanup
 └── index.css               # Global styles & utility classes
 ```
 
@@ -88,6 +105,33 @@ npm run preview
 ```
 
 During local development, Vite proxies `/api` requests to the deployed backend (see `vite.config.js`).
+
+## Testing
+
+The frontend uses **Vitest** with **React Testing Library** and **jsdom**.
+
+```bash
+# Run tests once (CI-friendly)
+npm run test:run
+
+# Run tests in watch mode
+npm test
+
+# Run tests with Vitest UI
+npm run test:ui
+```
+
+| Test file | Coverage |
+|-----------|----------|
+| `src/components/StudentForm.test.jsx` | Basic form render and submit button presence |
+
+Test configuration lives in `vite.config.js` (`test.environment`, `test.setupFiles`).
+
+## Linting
+
+```bash
+npm run lint
+```
 
 ## Deployment
 
