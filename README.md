@@ -70,7 +70,7 @@ frontend/src/
 ### Prerequisites
 
 - Node.js 18+
-- Backend API running (see [backend README](../backend/README.md))
+- Backend API running (see [backend README](https://github.com/m-alex-n/school-system-backend/))
 
 ### Setup
 
